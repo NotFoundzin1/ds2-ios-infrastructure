@@ -94,6 +94,48 @@ jobs:
           ' "$details" | tee -a "$REPORT"
           exit "$status"
 
+      - name: Link synthetic iPhoneOS executable
+        id: link
+        run: |
+          {
+            source="$RUNNER_TEMP/moltenvk"
+            bundle="$source/Package/Release/MoltenVK/static/MoltenVK.xcframework"
+            archive="$(PYTHONPATH=tools python3 -B -c \
+              'from pathlib import Path; import sys; from inspect_moltenvk import select_moltenvk; print(select_moltenvk(Path(sys.argv[1])))' \
+              "$bundle")"
+            expected="$(awk '$1 == "Archive:" && $4 == "SHA-256" {print $5}' \
+              "$RUNNER_TEMP/moltenvk-details.txt")"
+            actual="$(shasum -a 256 "$archive")"
+            if ! [[ "$expected" =~ ^[0-9a-f]{64}$ && "${actual%% *}" == "$expected" ]]; then
+              printf 'Archive SHA-256 differs from the inspected archive or is missing.\n' >&2
+              exit 1
+            fi
+            printf 'Link input matches inspected archive SHA-256: %s\n' "$expected"
+            sdk="$(xcrun --sdk iphoneos --show-sdk-path)"
+            compiler="$(xcrun --sdk iphoneos --find clang++)"
+            build="$RUNNER_TEMP/moltenvk-link"
+            cmake -S ios/moltenvk-link -B "$build" -G Ninja \
+              -DCMAKE_SYSTEM_NAME=iOS \
+              -DCMAKE_OSX_ARCHITECTURES=arm64 \
+              -DCMAKE_OSX_SYSROOT="$sdk" \
+              -DCMAKE_OSX_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET" \
+              -DCMAKE_CXX_COMPILER="$compiler" \
+              -DCMAKE_BUILD_TYPE=Release \
+              -DMOLTENVK_ARCHIVE="$archive" \
+              -DVULKAN_HEADERS="$source/External/Vulkan-Headers/include"
+            if cmake --build "$build" --verbose; then
+              python3 -B tools/inspect_moltenvk_link.py "$build/MoltenVKLinkProbe" \
+                --deployment-target "$IOS_DEPLOYMENT_TARGET" --sdk-version 18.5
+            else
+              status=$?
+              printf '\nArchive undefined symbols after link failure:\n'
+              if ! xcrun nm -u -m "$archive"; then
+                printf 'Could not list undefined archive symbols.\n' >&2
+              fi
+              exit "$status"
+            fi
+          } 2>&1 | tee -a "$REPORT"
+
       - name: Record step outcomes
         if: ${{ !cancelled() }}
         env:
@@ -101,9 +143,10 @@ jobs:
           TOOLCHAIN_OUTCOME: ${{ steps.toolchain.outcome }}
           BUILD_OUTCOME: ${{ steps.build.outcome }}
           INSPECT_OUTCOME: ${{ steps.inspect.outcome }}
+          LINK_OUTCOME: ${{ steps.link.outcome }}
         run: |
-          printf '\nCheckout: %s\nToolchain: %s\nBuild: %s\nInspection: %s\n' \
-            "$CHECKOUT_OUTCOME" "$TOOLCHAIN_OUTCOME" "$BUILD_OUTCOME" "$INSPECT_OUTCOME" >> "$REPORT"
+          printf '\nCheckout: %s\nToolchain: %s\nBuild: %s\nInspection: %s\nLink: %s\n' \
+            "$CHECKOUT_OUTCOME" "$TOOLCHAIN_OUTCOME" "$BUILD_OUTCOME" "$INSPECT_OUTCOME" "$LINK_OUTCOME" >> "$REPORT"
 
       - name: Upload inspection report
         if: ${{ !cancelled() }}
