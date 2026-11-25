@@ -23,4 +23,8 @@ O workflow usa [actions/checkout](https://github.com/actions/checkout/blob/34e11
 
 Ficam fora da árvore o jogo, assets, executáveis, dumps, DLC, código recompilado ou gerado, SDK e overlays do port, bibliotecas de terceiros sem revisão por arquivo, arquivos de configuração privados, certificados, credenciais, artefatos, capturas e logs. O projeto Android foi usado como referência documental. Seu código, assets, bibliotecas e histórico ficaram fora do inventário.
 
-Vulkan e MoltenVK aguardam a escolha de revisões exatas, a revisão da cadeia transitiva de build e dos avisos aplicáveis, e uma verificação iPhoneOS separada. A referência atual do MoltenVK usa Apache-2.0. Vulkan-Headers identifica MIT e Apache-2.0 por arquivo. Nenhum desses componentes é necessário para o teste Metal do probe. [MoltenVK](https://github.com/KhronosGroup/MoltenVK/blob/main/LICENSE) · [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/LICENSE.md)
+Vulkan e MoltenVK ficam fora do probe UIKit/Metal. A redistribuição de um binário do MoltenVK depende da revisão das dependências incorporadas e dos avisos aplicáveis. [Vulkan-Headers](https://github.com/KhronosGroup/Vulkan-Headers/blob/main/LICENSE.md)
+
+## Probe isolado do MoltenVK
+
+O inspetor original, os testes sintéticos e o workflow manual usam a licença MIT deste repositório. O workflow busca o código público da revisão fixada de MoltenVK e suas dependências durante a execução. O único arquivo enviado como artefato é o relatório de texto. [Licença Apache-2.0 do MoltenVK](https://github.com/KhronosGroup/MoltenVK/blob/db445ff2042d9ce348c439ad8451112f354b8d2a/LICENSE)

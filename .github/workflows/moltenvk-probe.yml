@@ -1,0 +1,113 @@
+name: MoltenVK iPhoneOS archive probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  moltenvk:
+    runs-on: macos-15-intel
+    timeout-minutes: 65
+    defaults:
+      run:
+        shell: bash
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
+      MOLTENVK_REVISION: db445ff2042d9ce348c439ad8451112f354b8d2a
+      IOS_DEPLOYMENT_TARGET: '16.3'
+      REPORT: ${{ runner.temp }}/moltenvk-inspection.txt
+    steps:
+      - name: Initialize inspection report
+        run: printf 'MoltenVK iPhoneOS device archive inspection\n' > "$REPORT"
+
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+        id: checkout
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - name: Verify public inventory and toolchain
+        id: toolchain
+        run: |
+          {
+            git rev-parse HEAD
+            uname -m
+            xcodebuild -version
+            xcrun --sdk iphoneos --show-sdk-version
+            python3 --version
+            python3 -c 'import hashlib; assert callable(hashlib.file_digest)'
+            df -h "$RUNNER_TEMP"
+            test "$(uname -m)" = x86_64
+            test "$(xcodebuild -version)" = $'Xcode 16.4\nBuild version 16F6'
+            test "$(xcrun --sdk iphoneos --show-sdk-version)" = 18.5
+            python3 -B tools/check_public_tree.py
+            python3 -B -m unittest discover -s tests
+          } 2>&1 | tee -a "$REPORT"
+
+      - name: Build pinned MoltenVK for iPhoneOS
+        id: build
+        run: |
+          source="$RUNNER_TEMP/moltenvk"
+          printf '\nBuilding MoltenVK at %s, minimum iOS %s.\n' \
+            "$MOLTENVK_REVISION" "$IOS_DEPLOYMENT_TARGET" | tee -a "$REPORT"
+          (
+            set -e
+            git init "$source"
+            git -C "$source" fetch --depth 1 https://github.com/KhronosGroup/MoltenVK.git "$MOLTENVK_REVISION"
+            git -C "$source" checkout --detach FETCH_HEAD
+            test "$(git -C "$source" rev-parse HEAD)" = "$MOLTENVK_REVISION"
+            cd "$source"
+            ./fetchDependencies --ios
+            xcodebuild -project MoltenVKPackaging.xcodeproj -scheme 'MoltenVK Package (iOS only)' \
+              -destination 'generic/platform=iOS' -configuration Release \
+              CODE_SIGNING_ALLOWED=NO IPHONEOS_DEPLOYMENT_TARGET="$IOS_DEPLOYMENT_TARGET" build
+          ) > "$RUNNER_TEMP/moltenvk-build.log" 2>&1 &
+          build_pid=$!
+          if ! wait "$build_pid"; then
+            printf 'MoltenVK build failed. Last 40 build log lines follow.\n' | tee -a "$REPORT"
+            tail -n 40 "$RUNNER_TEMP/moltenvk-build.log" | cut -c 1-500 | tee -a "$REPORT"
+            exit 1
+          fi
+          printf 'MoltenVK build succeeded.\n' | tee -a "$REPORT"
+          printf '%s\n' 'Upstream dependency pins:' >> "$REPORT"
+          git -C "$source" grep -E '^[0-9a-f]{40}$' -- ExternalRevisions/ >> "$REPORT"
+
+      - name: Inspect static archive
+        id: inspect
+        run: |
+          details="$RUNNER_TEMP/moltenvk-details.txt"
+          status=0
+          python3 -B tools/inspect_moltenvk.py \
+            "$RUNNER_TEMP/moltenvk/Package/Release/MoltenVK/static/MoltenVK.xcframework" \
+            --deployment-target "$IOS_DEPLOYMENT_TARGET" > "$details" 2>&1 || status=$?
+          awk '
+            /Verified MoltenVK otool section/ { minimum[$NF]++; next }
+            { if (++lines <= 160) print substr($0, 1, 500) }
+            END {
+              for (version in minimum) print "Verified iPhoneOS objects with minos", version ":", minimum[version]
+              if (lines > 160) print "Diagnostic lines omitted:", lines - 160
+            }
+          ' "$details" | tee -a "$REPORT"
+          exit "$status"
+
+      - name: Record step outcomes
+        if: ${{ !cancelled() }}
+        env:
+          CHECKOUT_OUTCOME: ${{ steps.checkout.outcome }}
+          TOOLCHAIN_OUTCOME: ${{ steps.toolchain.outcome }}
+          BUILD_OUTCOME: ${{ steps.build.outcome }}
+          INSPECT_OUTCOME: ${{ steps.inspect.outcome }}
+        run: |
+          printf '\nCheckout: %s\nToolchain: %s\nBuild: %s\nInspection: %s\n' \
+            "$CHECKOUT_OUTCOME" "$TOOLCHAIN_OUTCOME" "$BUILD_OUTCOME" "$INSPECT_OUTCOME" >> "$REPORT"
+
+      - name: Upload inspection report
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: moltenvk-iphoneos-inspection-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/moltenvk-inspection.txt
+          if-no-files-found: error
+          retention-days: 7
