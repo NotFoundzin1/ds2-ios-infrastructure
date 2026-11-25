@@ -1,0 +1,33 @@
+name: iPhoneOS infrastructure probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixtures:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - run: python -B tools/check_public_tree.py
+      - run: cmake -S . -B build/host -G Ninja
+      - run: ctest --test-dir build/host --output-on-failure
+
+  iphoneos:
+    needs: fixtures
+    runs-on: macos-15
+    timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: bash tools/build_iphoneos.sh
