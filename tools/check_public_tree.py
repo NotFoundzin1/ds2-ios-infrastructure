@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APPROVED = {
     ".github/workflows/moltenvk-probe.yml", "tools/inspect_moltenvk.py",
     "tests/test_moltenvk_probe.py",
+    "tools/check_workflows.py",
     ".github/workflows/iphoneos-probe.yml",
     ".gitignore", "CMakeLists.txt", "LICENSE", "README.md",
     "docs/PROVENANCE.md", "docs/INTEGRATION.md",

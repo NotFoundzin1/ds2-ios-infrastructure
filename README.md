@@ -15,6 +15,19 @@ ctest --test-dir build/host --output-on-failure
 
 O build de host configura e executa testes Python com ZIPs e saídas Mach-O sintéticas. O código UIKit e os frameworks iOS exigem Xcode e o SDK iPhoneOS.
 
+## Validação de workflows
+
+Com o [actionlint oficial](https://github.com/rhysd/actionlint/releases) no PATH, rode:
+
+```powershell
+python -B tools/check_workflows.py
+```
+
+Para auditar outra árvore local, passe seu caminho como argumento. Use
+`--actionlint CAMINHO` quando o executável estiver fora do PATH. O comando
+verifica todos os workflows da árvore escolhida e confirma, em um fixture
+temporário, que o uso de `runner.temp` no `env` de um job é rejeitado.
+
 ## macOS
 
 Com Xcode, CMake, Ninja e Python instalados, execute em uma árvore de build limpa:

@@ -17,10 +17,12 @@ jobs:
       DEVELOPER_DIR: /Applications/Xcode_16.4.app/Contents/Developer
       MOLTENVK_REVISION: db445ff2042d9ce348c439ad8451112f354b8d2a
       IOS_DEPLOYMENT_TARGET: '16.3'
-      REPORT: ${{ runner.temp }}/moltenvk-inspection.txt
     steps:
       - name: Initialize inspection report
-        run: printf 'MoltenVK iPhoneOS device archive inspection\n' > "$REPORT"
+        run: |
+          report="$RUNNER_TEMP/moltenvk-inspection.txt"
+          printf 'MoltenVK iPhoneOS device archive inspection\n' > "$report"
+          printf 'REPORT=%s\n' "$report" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         id: checkout
