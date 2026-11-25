@@ -25,7 +25,9 @@ endif()
 add_library(MoltenVK::MoltenVK STATIC IMPORTED)
 set_target_properties(MoltenVK::MoltenVK PROPERTIES IMPORTED_LOCATION "${MOLTENVK_ARCHIVE}")
 
-add_executable(MoltenVKLinkProbe main.cpp)
+add_executable(MoltenVKLinkProbe MACOSX_BUNDLE main.cpp)
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/moltenvk-link-target.txt"
+    CONTENT "$<TARGET_FILE:MoltenVKLinkProbe>\n")
 target_include_directories(MoltenVKLinkProbe PRIVATE "${VULKAN_HEADERS}")
 target_link_options(MoltenVKLinkProbe PRIVATE -ObjC -fexperimental-library)
 target_link_libraries(MoltenVKLinkProbe PRIVATE MoltenVK::MoltenVK)

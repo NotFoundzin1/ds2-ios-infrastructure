@@ -124,7 +124,7 @@ jobs:
               -DMOLTENVK_ARCHIVE="$archive" \
               -DVULKAN_HEADERS="$source/External/Vulkan-Headers/include"
             if cmake --build "$build" --verbose; then
-              python3 -B tools/inspect_moltenvk_link.py "$build/MoltenVKLinkProbe" \
+              python3 -B tools/inspect_moltenvk_link.py "$build/moltenvk-link-target.txt" \
                 --deployment-target "$IOS_DEPLOYMENT_TARGET" --sdk-version 18.5
             else
               status=$?

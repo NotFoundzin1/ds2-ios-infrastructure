@@ -34,19 +34,37 @@ def check_linked_image(archs, header, output, libraries, symbols, target, sdk):
         raise ValueError("Link probe: missing static definition of vkGetInstanceProcAddr")
 
 
+def resolve_link_target(manifest):
+    try:
+        entries = manifest.read_text(encoding="utf-8").splitlines()
+    except OSError as error:
+        raise ValueError(f"Cannot read CMake target path export {manifest}: {error}") from error
+    if len(entries) != 1 or not entries[0].strip():
+        raise ValueError(f"CMake target path export must contain exactly one path: {manifest}")
+    binary = Path(entries[0])
+    if (not binary.is_absolute() or ".." in binary.parts
+            or not binary.resolve().is_relative_to(manifest.parent.resolve())):
+        raise ValueError(f"CMake target path is outside the build directory: {binary}")
+    if not binary.is_file() or binary.is_symlink():
+        raise ValueError(f"CMake target is missing or is not a regular file: {binary}")
+    return binary
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("binary", type=Path)
+    parser.add_argument("manifest", type=Path, help="CMake-generated target file path export")
     parser.add_argument("--deployment-target", required=True)
     parser.add_argument("--sdk-version", required=True)
     args = parser.parse_args()
     try:
-        archs = xcrun("lipo", "-archs", args.binary)
-        header = xcrun("otool", "-hv", args.binary)
-        output = xcrun("otool", "-l", args.binary)
-        libraries = xcrun("otool", "-L", args.binary)
-        symbols = xcrun("nm", "-U", args.binary)
-        undefined = xcrun("nm", "-u", "-m", args.binary)
+        binary = resolve_link_target(args.manifest)
+        print(f"Inspecting CMake target: {binary}", flush=True)
+        archs = xcrun("lipo", "-archs", binary)
+        header = xcrun("otool", "-hv", binary)
+        output = xcrun("otool", "-l", binary)
+        libraries = xcrun("otool", "-L", binary)
+        symbols = xcrun("nm", "-U", binary)
+        undefined = xcrun("nm", "-u", "-m", binary)
         print(f"Architecture: {archs.strip()}\n{header.rstrip()}")
         print(f"Build metadata:\n{fields(load_commands(output), 'LC_BUILD_VERSION', 'platform')}")
         print(f"Dynamic dependencies:\n{libraries.rstrip()}")
