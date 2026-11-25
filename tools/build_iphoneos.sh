@@ -17,8 +17,8 @@ cmake -S . -B "$build" -G Ninja \
   -DCMAKE_OSX_SYSROOT=iphoneos \
   -DCMAKE_OSX_ARCHITECTURES=arm64 \
   -DCMAKE_OSX_DEPLOYMENT_TARGET=16.3 \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+  -DCMAKE_BUILD_TYPE=Release
+# Ninja builds without a signing identity or provisioning step.
 cmake --build "$build" --parallel 2
 bundle="$build/PhoneOSProbe.app"
 mkdir -p "$output"

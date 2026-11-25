@@ -12,5 +12,19 @@
     <key>MinimumOSVersion</key><string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
     <key>UIDeviceFamily</key><array><integer>1</integer></array>
     <key>UILaunchScreen</key><dict/>
+    <key>UIApplicationSceneManifest</key>
+    <dict>
+        <key>UIApplicationSupportsMultipleScenes</key><false/>
+        <key>UISceneConfigurations</key>
+        <dict>
+            <key>UIWindowSceneSessionRoleApplication</key>
+            <array>
+                <dict>
+                    <key>UISceneConfigurationName</key><string>Probe</string>
+                    <key>UISceneDelegateClassName</key><string>ProbeSceneDelegate</string>
+                </dict>
+            </array>
+        </dict>
+    </dict>
 </dict>
 </plist>

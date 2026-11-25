@@ -94,6 +94,24 @@ class PackageTests(unittest.TestCase):
             self.run_inspection()
 
 
+class BundleTemplateTests(unittest.TestCase):
+    def test_scene_manifest_matches_delegate(self):
+        root = Path(__file__).resolve().parents[1]
+        template = (root / "ios/Info.plist.in").read_bytes()
+        plist = plistlib.loads(
+            template.replace(b"${MACOSX_BUNDLE_EXECUTABLE_NAME}", APP.encode())
+            .replace(b"${CMAKE_OSX_DEPLOYMENT_TARGET}", b"16.3")
+        )
+        for key, value in PLISTS["Info.plist"].items():
+            self.assertEqual(plist[key], value)
+        manifest = plist["UIApplicationSceneManifest"]
+        self.assertIs(manifest["UIApplicationSupportsMultipleScenes"], False)
+        [configuration] = manifest["UISceneConfigurations"]["UIWindowSceneSessionRoleApplication"]
+        delegate = configuration["UISceneDelegateClassName"]
+        source = (root / "src/main.m").read_text(encoding="utf-8")
+        self.assertIn(f"@interface {delegate} : UIResponder <UIWindowSceneDelegate>", source)
+
+
 class MachOTests(unittest.TestCase):
     @staticmethod
     def tool(command, **kwargs):

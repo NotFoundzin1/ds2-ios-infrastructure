@@ -20,12 +20,23 @@ static BOOL CheckFrameworks(void) {
 }
 
 @interface ProbeDelegate : UIResponder <UIApplicationDelegate>
-@property(nonatomic, strong) UIWindow *window;
 @end
 
 @implementation ProbeDelegate
-- (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)options {
-    self.window = [[UIWindow alloc] initWithFrame:UIScreen.mainScreen.bounds];
+@end
+
+@interface ProbeSceneDelegate : UIResponder <UIWindowSceneDelegate>
+@property(nonatomic, strong) UIWindow *window;
+@end
+
+@implementation ProbeSceneDelegate
+- (void)scene:(UIScene *)scene
+    willConnectToSession:(UISceneSession *)session
+                 options:(UISceneConnectionOptions *)options {
+    if (![scene isKindOfClass:UIWindowScene.class]) {
+        return;
+    }
+    self.window = [[UIWindow alloc] initWithWindowScene:(UIWindowScene *)scene];
     UIViewController *controller = [[UIViewController alloc] init];
     UILabel *label = [[UILabel alloc] initWithFrame:controller.view.bounds];
     label.autoresizingMask = UIViewAutoresizingFlexibleWidth | UIViewAutoresizingFlexibleHeight;
@@ -45,7 +56,7 @@ static BOOL CheckFrameworks(void) {
     if (!buffer) {
         label.text = [prefix stringByAppendingString:@"\nMetal: command buffer unavailable"];
         NSLog(@"%@", label.text);
-        return YES;
+        return;
     }
     [buffer addCompletedHandler:^(id<MTLCommandBuffer> result) {
         BOOL passed = result.status == MTLCommandBufferStatusCompleted;
@@ -58,7 +69,6 @@ static BOOL CheckFrameworks(void) {
         });
     }];
     [buffer commit];
-    return YES;
 }
 @end
 

@@ -23,7 +23,7 @@ Com Xcode, CMake, Ninja e Python instalados, execute em uma árvore de build lim
 bash tools/build_iphoneos.sh
 ```
 
-O script gera `PhoneOSProbe.app` para iPhoneOS ARM64 com mínimo iOS 16.3, inspeciona os três Mach-O e gera um IPA sem assinatura com dois relatórios em `out/iphoneos/`. Uma inspeção aprovada comprova o link e o empacotamento. Para executar a tela e o teste Metal, assine e provisione o app em ambiente controlado e use um iPhone.
+O script gera `PhoneOSProbe.app` para iPhoneOS ARM64 com mínimo iOS 16.3, inspeciona os três Mach-O e gera um IPA sem assinatura de distribuição ou provisionamento, com dois relatórios em `out/iphoneos/`. Uma inspeção aprovada comprova o link e o empacotamento. Para executar a tela e o teste Metal, assine e provisione o app em ambiente controlado e use um iPhone.
 
 ## CI
 

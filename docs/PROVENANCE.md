@@ -17,7 +17,7 @@ A política declarada exclui dados originais, chaves e código gerado do Git. O 
 | `.github/workflows/iphoneos-probe.yml`, `.gitignore` | Configuração original, MIT |
 | `README.md`, `docs/{PROVENANCE.md,INTEGRATION.md}`, `LICENSE` | Documentação original e texto da licença MIT |
 
-O workflow usa [actions/checkout](https://github.com/actions/checkout/blob/v4/LICENSE), MIT, GitHub, Inc. e contribuidores. CMake, Ninja, Python, Git e Xcode são ferramentas externas. Foundation, UIKit e Metal vêm do SDK do sistema e são vinculados pelo app. O inventário contém apenas os arquivos listados e nenhum binário dessas ferramentas ou frameworks de sistema.
+O workflow usa [actions/checkout](https://github.com/actions/checkout/blob/34e114876b0b11c390a56381ad16ebd13914f8d5/LICENSE), MIT, GitHub, Inc. e contribuidores. CMake, Ninja, Python, Git e Xcode são ferramentas externas. Foundation, UIKit e Metal vêm do SDK do sistema e são vinculados pelo app. O inventário contém apenas os arquivos listados e nenhum binário dessas ferramentas ou frameworks de sistema.
 
 ## Exclusões
 
